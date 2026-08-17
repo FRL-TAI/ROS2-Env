@@ -1,0 +1,25 @@
+{
+    "name": "ROS2-Humble-Env for OperaSim",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "workspaceFolder": "/workspaces",
+    "workspaceMount": "source=${localWorkspaceFolder}../workspaces,target=/workspaces,type=bind",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-iot.vscode-ros",
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-extension-pack",
+                "ms-python.python"
+            ],
+            "settings": {
+                "ros.distro": "humble"
+            }
+        }
+    },
+    "forwardPorts": [10000],
+
+    // コンテナ起動後に自動でビルドを実行
+    "postCreateCommand": "rosdep update && for ws in /workspaces/*/; do if [ -d \"${ws}src\" ]; then cd \"${ws}\" && rosdep install -i --from-path src --rosdistro humble -y && colcon build --symlink-install; fi; done && echo 'for setup_file in /workspaces/*/install/setup.bash; do if [ -f \"$setup_file\" ]; then source \"$setup_file\"; fi; done' >> ~/.bashrc"
+}
