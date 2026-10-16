@@ -1,9 +1,11 @@
 # ベースイメージ : Ubuntu 22.04 LTS
 FROM ubuntu:22.04
 
+# apt の対話的な質問を出さない（ビルド中だけ有効）
+ARG DEBIAN_FRONTEND=noninteractive
+
 # 日本語ロケールとフォントのインストール
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y --no-install-recommends \
     locales \
     fonts-noto-cjk && \
@@ -16,7 +18,6 @@ ENV LANG=ja_JP.UTF-8 \
 
 # タイムゾーンの設定（ROS 2インストールに必要）
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y --no-install-recommends \
     tzdata && \
     ln -fs /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && \
@@ -25,17 +26,16 @@ RUN apt-get update && \
 
 # ROS 2 Humble のリポジトリ追加と必須ツールのインストール
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y --no-install-recommends \
     software-properties-common \
     curl \
     gnupg2 && \
     curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu jammy main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu jammy main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null && \
+    rm -rf /var/lib/apt/lists/*
 
 # ROS 2本体(Desktop版)とビルドツール等のインストール
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y --no-install-recommends \
     ros-humble-desktop \
     python3-colcon-common-extensions \
@@ -44,6 +44,40 @@ RUN apt-get update && \
     git \
     build-essential && \
     rm -rf /var/lib/apt/lists/*
+
+# データ解析用の Python ライブラリ
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python3-pandas \
+    python3-matplotlib \
+    python3-scipy \
+    python3-seaborn \
+    python3-sklearn \
+    python3-tqdm \
+    python3-yaml \
+    python3-ipykernel && \
+    rm -rf /var/lib/apt/lists/*
+
+# 開発・デバッグ用のツール
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    jq \
+    tree \
+    less \
+    vim \
+    htop \
+    iputils-ping \
+    net-tools && \
+    rm -rf /var/lib/apt/lists/*
+#   jq                 : JSON・JSON Lines（episodes.jsonl）をターミナルで見る
+#   tree               : フォルダの構成を表示する
+#   less、vim          : ログやファイルをターミナルで見る・直す
+#   htop               : CPU・メモリの使用状況を見る（耐久試験など）
+#   iputils-ping、net-tools : Unity（ROS-TCP）との通信の確認
+
+# matplotlib で日本語を表示できるようにする（フォントは上で入れた Noto CJK）
+RUN mkdir -p /root/.config/matplotlib && \
+    echo "font.family: Noto Sans CJK JP" > /root/.config/matplotlib/matplotlibrc
 
 # rosdepの初期化
 RUN rosdep init && rosdep update
