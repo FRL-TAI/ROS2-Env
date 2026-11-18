@@ -19,6 +19,7 @@
         }
     },
     "forwardPorts": [10000],
+    "runArgs": ["--name", "ros2-humble-env"],
 
     // コンテナ起動後に自動でビルドを実行
     "postCreateCommand": "rosdep update && for ws in /workspaces/*/; do if [ -d \"${ws}src\" ]; then cd \"${ws}\" && rosdep install -i --from-path src --rosdistro humble -y && colcon build --symlink-install; fi; done && echo 'for setup_file in /workspaces/*/install/setup.bash; do if [ -f \"$setup_file\" ]; then source \"$setup_file\"; fi; done' >> ~/.bashrc"
